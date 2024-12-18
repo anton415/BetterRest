@@ -27,38 +27,32 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             Form {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("When do you want to wake up?")
-                        .font(.headline)
+                Section(header: Text("When do you want to wake up?")) {
                     DatePicker("Please enter a time", selection: $wakeUp, in: Date.now..., displayedComponents: .hourAndMinute).labelsHidden()
                 }
                 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Desired amount of sleep")
-                        .font(.headline)
+                Section(header: Text("Desired amount of sleep")) {
                     Stepper("\(sleepAmount.formatted()) hours", value: $sleepAmount, in: 4...12, step: 0.25)
                 }
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Daily coffee intake")
-                        .font(.headline)
-                    Stepper("^[\(coffeeAmount) cup](inflect: true)", value: $coffeeAmount, in: 1...20)
+                Section(header: Text("Daily coffee intake")) {
+                    Picker("Please choose a coffee amount", selection: $coffeeAmount) {
+                        ForEach(0..<11) {
+                            Text("\($0)")
+                        }
+                    }
+                    Text("You selected: ^[\(coffeeAmount) cup](inflect: true)")
+                }
+                
+                Section(header: Text("Your ideal bedtime is…")) {
+                    Text("\(calculateBedtime())")
                 }
             }
             .navigationTitle("BetterRest")
-            .toolbar {
-                Button("Calculate", action: calculateBedtime)
-            }
         }
-        .alert(alertTitle, isPresented: $showingAlert) {
-            Button("OK") { }
-        } message: {
-            Text(alertMessage)
-        }
-
     }
     
-    func calculateBedtime() {
+    func calculateBedtime() -> String {
         do {
             let config = MLModelConfiguration()
             let model = try SleepCalculator(configuration: config)
@@ -72,16 +66,12 @@ struct ContentView: View {
             let sleepTime = wakeUp - prediction.actualSleep
             
             alertTitle = "Your ideal bedtime is…"
-            alertMessage = sleepTime.formatted(date: .omitted, time: .shortened)
+            return sleepTime.formatted(date: .omitted, time: .shortened)
         } catch {
             alertTitle = "Error"
-            alertMessage = "Sorry, there was a problem calculating your bedtime."
+            return "Sorry, there was a problem calculating your bedtime."
         }
-        
-        showingAlert = true
     }
-    
-    
 }
 
 #Preview {
